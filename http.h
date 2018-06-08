@@ -1,18 +1,19 @@
 #pragma once
 
+#include <cstdio>
 #include <string>
 #include <list>
 
 class HttpHeaderField {
   public:
-    HttpHeaderField();
+    HttpHeaderField() = default;
     std::string name;
     std::string value;
 };
 
 class HttpRequest {
   public:
-    HttpRequest();
+    HttpRequest() = default;
     long long length;
     std::string version;
     std::string method;
@@ -20,4 +21,10 @@ class HttpRequest {
     std::string body;
     std::list<HttpHeaderField> field;
     void print();
+    void read_request(FILE* fin);
+  private:
+    void read_request_line(FILE* fin);
+    void parse_request_line(std::string&);
 };
+
+void http_service(FILE* fin, FILE* fout);

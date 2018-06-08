@@ -6,9 +6,12 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "http.h"
+#include "network.h"
 #include "util.h"
 
-FILE* flog;
+// file pointer to output log
+FILE* flog = stderr;
 
 typedef void (*sighandler_t)(int);
 
@@ -19,11 +22,11 @@ void wait_child(int sig)
   pid_t child = wait(&status);
   printf("%d: ", child);
   if(WIFEXITED(status)) {
-    printf("exit, status=%d\n", status);
+    fprintf(flog, "exit, status=%d\n", status);
   } else if(WIFSIGNALED(status)) {
-    printf("signal, sig=%d\n", WTERMSIG(status));
+    fprintf(flog, "signal, sig=%d\n", WTERMSIG(status));
   } else {
-    printf("abnormal exit\n");
+    fprintf(flog, "abnormal exit\n");
   }
 }
 
@@ -50,12 +53,16 @@ void init_sighandler()
 int main()
 {
   FILE *fin, *fout;
-  fin  = stdin;
-  fout = stdout;
-  flog = stderr;
+  int listen_fd, accept_fd;
   init_sighandler();
-  //http_service(fin, fout);
+  listen_fd = sock_listen("8080");
+  accept_fd = accept_loop(listen_fd);
+
+  fin  = fdopen(dup(accept_fd), "rb");
+  fout = fdopen(dup(accept_fd), "wb");
+  http_service(fin, fout);
   fclose(fin);
   fclose(fout);
+  close(accept_fd);
   return 0;
 }
