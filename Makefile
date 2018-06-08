@@ -1,7 +1,7 @@
 SRCS = main.cc network.cc util.cc http.cc
 OBJS = $(SRCS:.cc=.o)
 DEPS = $(SRCS:.cc=.d)
-TARGET = httpd++
+TARGET = http-server
 
 CXX = clang++
 CXXFLAGS = -g -O0 -Wall -Wextra -std=c++14
