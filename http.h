@@ -24,7 +24,7 @@ class HttpRequest {
     void read_request(FILE* fin);
   private:
     void read_request_line(FILE* fin);
-    void parse_request_line(std::string&);
+    void read_request_header_field(FILE* fin);
 };
 
 void http_service(FILE* fin, FILE* fout);

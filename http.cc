@@ -10,17 +10,14 @@ extern FILE* flog;
 
 static const int kDefaultStringLength = 0x100;
 
-void HttpRequest::parse_request_line(std::string& request_line)
+void HttpRequest::read_request_line(FILE* fin)
 {
+  char ch, prev_char;
+
   // read method
   assert(method.empty());
   method.reserve(kDefaultStringLength);
-  auto it = request_line.begin();
-  for(; it != request_line.end(); it++) {
-    char ch = *it;
-    if(ch == ' ') {
-      break;
-    }
+  while((ch = fgetc(fin)) != ' ') {
     method.push_back(ch);
   }
   method.shrink_to_fit();
@@ -28,11 +25,7 @@ void HttpRequest::parse_request_line(std::string& request_line)
   // read path
   assert(path.empty());
   path.reserve(kDefaultStringLength);
-  for(it++; it != request_line.end(); it++) {
-    char ch = *it;
-    if(ch == ' ') {
-      break;
-    }
+  while((ch = fgetc(fin)) != ' ') {
     path.push_back(ch);
   }
   path.shrink_to_fit();
@@ -40,30 +33,20 @@ void HttpRequest::parse_request_line(std::string& request_line)
   // read version
   assert(version.empty());
   version.reserve(kDefaultStringLength);
-  bool prev_is_cr = false;
-  for(it++; it != request_line.end(); it++) {
-    char ch = *it;
-    if(ch == '\r') {
-      prev_is_cr = true;
-      continue;
-    }
-    if(prev_is_cr) {
-      if(ch == '\n') {
-        break;
-      } else {
-        version.push_back('\r');
-      }
+  while(true) {
+    prev_char = ch;
+    ch = fgetc(fin);
+    if(prev_char == '\r' && ch == '\n') {
+      version.pop_back(); // remove '\r'
+      break;
     }
     version.push_back(ch);
-    prev_is_cr = false;
   }
+  version.shrink_to_fit();
 }
 
-void HttpRequest::read_request_line(FILE* fin)
+void HttpRequest::read_request_header_field(FILE* fin)
 {
-  std::string request_line;
-  read_line(request_line, fin);
-  this->parse_request_line(request_line);
 }
 
 void HttpRequest::read_request(FILE* fin)
