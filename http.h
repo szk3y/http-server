@@ -20,6 +20,7 @@ class HttpRequest {
     std::string method;
     std::string path;
     std::string body;
+    // TODO: use hash map
     std::list<HttpHeaderField> field;
     void print() const;
     void read_request(FILE* fin);
