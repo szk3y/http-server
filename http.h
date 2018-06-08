@@ -9,6 +9,7 @@ class HttpHeaderField {
     HttpHeaderField() = default;
     std::string name;
     std::string value;
+    void print() const;
 };
 
 class HttpRequest {
@@ -20,7 +21,7 @@ class HttpRequest {
     std::string path;
     std::string body;
     std::list<HttpHeaderField> field;
-    void print();
+    void print() const;
     void read_request(FILE* fin);
   private:
     void read_request_line(FILE* fin);
