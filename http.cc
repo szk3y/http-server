@@ -142,7 +142,7 @@ void HttpRequest::print() const
   print_str_member("path    = ", path);
   print_str_member("version = ", version);
   // print field
-  for(const auto x : field) {
+  for(const auto& x : field) {
     x.print();
   }
   fputs("[body begin]\n", flog);
