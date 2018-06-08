@@ -43,6 +43,12 @@ int sock_listen(const char* port)
     if(sock < 0) {
       continue;
     }
+    // set reuseaddr
+    int enable = 1;
+    if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
+      close(sock);
+      continue;
+    }
     if(bind(sock, ai->ai_addr, ai->ai_addrlen) < 0) {
       close(sock);
       continue;
@@ -56,4 +62,6 @@ int sock_listen(const char* port)
     return sock;
   }
   fprintf_exit("sock_listen: all candidates failed");
+  // never reach this code
+  return -1;
 }

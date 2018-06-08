@@ -11,7 +11,7 @@
 #include "util.h"
 
 // file pointer to output log
-FILE* flog = stderr;
+FILE* flog = stdout;
 
 typedef void (*sighandler_t)(int);
 

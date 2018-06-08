@@ -47,6 +47,7 @@ void HttpRequest::read_request_line(FILE* fin)
 
 void HttpRequest::read_request_header_field(FILE* fin)
 {
+  UNUSED(fin);
 }
 
 void HttpRequest::read_request(FILE* fin)
@@ -75,8 +76,8 @@ void HttpRequest::print()
   print_str_member("method  = ", method);
   print_str_member("path    = ", path);
   print_str_member("version = ", version);
-  fputs("[body begin]", flog);
+  fputs("[body begin]\n", flog);
   fputs(body.c_str(), flog);
-  fputs("[body end]", flog);
+  fputs("[body end]\n", flog);
   fprintf(flog, "body_len = %lld\n", length);
 }
