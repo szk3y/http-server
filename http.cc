@@ -71,7 +71,7 @@ void HttpRequest::read_request_header_field(FILE* fin)
     buf.clear();
     read_line(fin, buf);
 
-    // end of HTTP header
+    // determine the end of HTTP header
     if(buf.empty()) {
       break;
     }
