@@ -117,7 +117,16 @@ void http_service(FILE* fin, FILE* fout)
   HttpRequest* req = new HttpRequest();
   req->read_request(fin);
   req->print();
-  UNUSED(fout);
+  HttpResponse* res = new HttpResponse();
+
+  // TODO: make a response
+  res->version = "HTTP/1.1";
+  res->status_code = 200;
+  res->status_msg = "OK";
+  res->print();
+
+  res->send(fout);
+  delete res;
   delete req;
 }
 
@@ -127,6 +136,15 @@ void HttpHeaderField::print() const
   fputs(": ", flog);
   fputs(value.c_str(), flog);
   fputc('\n', flog);
+}
+
+void HttpHeaderField::send(FILE* fout) const
+{
+  fputs(name.c_str(), fout);
+  fputs(": ", fout);
+  fputs(value.c_str(), fout);
+  fputc('\r', fout);
+  fputc('\n', fout);
 }
 
 static void print_str_member(const char* str, const std::string& member)
@@ -149,4 +167,27 @@ void HttpRequest::print() const
   fputs(body.c_str(), flog);
   fputs("[body end]\n", flog);
   fprintf(flog, "body_len = %lld\n", length);
+}
+
+void HttpResponse::send(FILE* fout) const
+{
+  fprintf(fout, "%s %d %s\r\n", version.c_str(), status_code, status_msg.c_str());
+  for(const auto& x : field) {
+    x.send(fout);
+  }
+  fputs("\r\n", fout);
+  fputs(body.c_str(), fout);
+}
+
+void HttpResponse::print() const
+{
+  fprintf(flog, "version = %s\n", version.c_str());
+  fprintf(flog, "status_code = %d\n", status_code);
+  fprintf(flog, "status_msg  = %s\n", status_msg.c_str());
+  for(const auto& x : field) {
+    x.print();
+  }
+  fputs("[body begin]\n", flog);
+  fputs(body.c_str(), flog);
+  fputs("[body end]\n", flog);
 }

@@ -7,7 +7,10 @@ target = './http-server'
 
 p = Popen([target])
 try:
-    requests.get('http://localhost:8080/main.cc', timeout=1)
+    req = requests.head('http://localhost:8080', timeout=1)
+    print(req.status_code)
+    print(req.reason)
+    print(req.headers)
 except requests.exceptions.Timeout:
     print('Timeout!')
 p.terminate()
