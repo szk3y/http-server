@@ -1,17 +1,14 @@
 #pragma once
 
 #include <cstdio>
-#include <string>
 #include <list>
+#include <map>
+#include <string>
+#include <unordered_map>
 
-class HttpHeaderField {
-  public:
-    HttpHeaderField() = default;
-    std::string name;
-    std::string value;
-    void print() const;
-    void send(FILE* fout) const;
-};
+// Which is better, map or unordered_map?
+// typedef std::map<std::string, std::string> Dictionary;
+typedef std::unordered_map<std::string, std::string> Dictionary;
 
 class HttpRequest {
   public:
@@ -21,8 +18,7 @@ class HttpRequest {
     std::string method;
     std::string path;
     std::string body;
-    // TODO: use hash map
-    std::list<HttpHeaderField> field;
+    Dictionary field;
     void print() const;
     void read_request(FILE* fin);
   private:
@@ -37,8 +33,7 @@ class HttpResponse {
     std::string version;
     int status_code;
     std::string status_msg;
-    // TODO: use hash map
-    std::list<HttpHeaderField> field;
+    Dictionary field;
     std::string body;
     void send(FILE* fout) const;
     void print() const;

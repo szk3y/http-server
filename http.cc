@@ -51,6 +51,8 @@ static void read_line(FILE* fin, std::string& s)
 {
   int ch = fgetc(fin);
   int prev_char;
+  s.clear();
+  s.reserve(kDefaultStringLength);
   while(true) {
     s.push_back(ch);
     prev_char = ch;
@@ -60,15 +62,17 @@ static void read_line(FILE* fin, std::string& s)
       break;
     }
   }
+  s.shrink_to_fit();
 }
 
 void HttpRequest::read_request_header_field(FILE* fin)
 {
   int ch;
   std::string buf;
+  std::string key;
+  std::string value;
 
   while(true) {
-    buf.clear();
     read_line(fin, buf);
 
     // determine the end of HTTP header
@@ -76,13 +80,11 @@ void HttpRequest::read_request_header_field(FILE* fin)
       break;
     }
 
-    // new header field
-    field.push_back(HttpHeaderField());
-
     // init iterator
     auto it = buf.begin();
 
     // read name
+    key.clear();
     for(; it != buf.end(); it++) {
       ch = *it;
       if(ch == ':') {
@@ -90,7 +92,7 @@ void HttpRequest::read_request_header_field(FILE* fin)
         it++;
         break;
       }
-      field.back().name.push_back(ch);
+      key.push_back(ch);
     }
 
     // skip space
@@ -99,10 +101,14 @@ void HttpRequest::read_request_header_field(FILE* fin)
     }
 
     // read value
+    value.clear();
     for(; it != buf.end(); it++) {
       ch = *it;
-      field.back().value.push_back(ch);
+      value.push_back(ch);
     }
+
+    // add new a key-value pair
+    field[key] = value;
   }
 }
 
@@ -130,23 +136,6 @@ void http_service(FILE* fin, FILE* fout)
   delete req;
 }
 
-void HttpHeaderField::print() const
-{
-  fputs(name.c_str(), flog);
-  fputs(": ", flog);
-  fputs(value.c_str(), flog);
-  fputc('\n', flog);
-}
-
-void HttpHeaderField::send(FILE* fout) const
-{
-  fputs(name.c_str(), fout);
-  fputs(": ", fout);
-  fputs(value.c_str(), fout);
-  fputc('\r', fout);
-  fputc('\n', fout);
-}
-
 static void print_str_member(const char* str, const std::string& member)
 {
   fputs(str, flog);
@@ -154,15 +143,26 @@ static void print_str_member(const char* str, const std::string& member)
   fputc('\n', flog);
 }
 
+static void print_dictionary(const Dictionary& dict)
+{
+  for(const auto& dpair: dict) {
+    fprintf(flog, "%s: %s\n", dpair.first.c_str(), dpair.second.c_str());
+  }
+}
+
+static void send_dictionary(const Dictionary& dict, FILE* fout)
+{
+  for(const auto& dpair: dict) {
+    fprintf(fout, "%s: %s\r\n", dpair.first.c_str(), dpair.second.c_str());
+  }
+}
+
 void HttpRequest::print() const
 {
   print_str_member("method  = ", method);
   print_str_member("path    = ", path);
   print_str_member("version = ", version);
-  // print field
-  for(const auto& x : field) {
-    x.print();
-  }
+  print_dictionary(field);
   fputs("[body begin]\n", flog);
   fputs(body.c_str(), flog);
   fputs("[body end]\n", flog);
@@ -172,9 +172,7 @@ void HttpRequest::print() const
 void HttpResponse::send(FILE* fout) const
 {
   fprintf(fout, "%s %d %s\r\n", version.c_str(), status_code, status_msg.c_str());
-  for(const auto& x : field) {
-    x.send(fout);
-  }
+  send_dictionary(field, fout);
   fputs("\r\n", fout);
   fputs(body.c_str(), fout);
 }
@@ -184,9 +182,7 @@ void HttpResponse::print() const
   fprintf(flog, "version = %s\n", version.c_str());
   fprintf(flog, "status_code = %d\n", status_code);
   fprintf(flog, "status_msg  = %s\n", status_msg.c_str());
-  for(const auto& x : field) {
-    x.print();
-  }
+  print_dictionary(field);
   fputs("[body begin]\n", flog);
   fputs(body.c_str(), flog);
   fputs("[body end]\n", flog);
