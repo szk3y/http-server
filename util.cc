@@ -8,8 +8,6 @@
 #include <cstring>
 #include <string>
 
-#include "http.h" // Dictionary
-
 using std::string;
 
 extern FILE* flog;

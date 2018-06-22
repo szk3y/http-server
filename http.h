@@ -2,14 +2,9 @@
 
 #include <cstdio>
 #include <list>
-#include <map>
 #include <string>
-#include <unordered_map>
 
-// FIXME: move this to util
-// Which is better, map or unordered_map?
-// typedef std::map<std::string, std::string> Dictionary;
-typedef std::unordered_map<std::string, std::string> Dictionary;
+#include "util.h"
 
 typedef enum {
   Ok = 200,
