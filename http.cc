@@ -5,12 +5,17 @@
 #include <cstring>
 #include <ctype.h>
 #include <string>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "util.h"
 
 extern FILE* flog;
+extern const char* docroot;
 
 static const int kDefaultStringLength = 0x100;
+static const int kMaxContentLength = 0x1000000;
 
 void HttpRequest::read_request_line(FILE* fin)
 {
@@ -112,10 +117,110 @@ void HttpRequest::read_request_header_field(FILE* fin)
   }
 }
 
+void HttpRequest::read_request_body(FILE* fin)
+{
+  auto it = find_field(field, "Content-length");
+  int content_length = std::stoi(it->second);
+  if(content_length < 0) {
+    fprintf_exit("read_request_body: negative content length found\n");
+  }
+  if(kMaxContentLength < content_length) {
+    fprintf_exit("read_request_body: content length is too long\n");
+  }
+  assert(body.empty());
+  body.resize(content_length);
+  fread(&body[0], 1, body.size(), fin);
+}
+
+bool HttpRequest::method_has_request_body() const
+{
+  return method.compare("HEAD") != 0;
+}
+
+bool HttpRequest::method_is_implemented() const
+{
+  return method.compare("HEAD");
+}
+
 void HttpRequest::read_request(FILE* fin)
 {
   this->read_request_line(fin);
   this->read_request_header_field(fin);
+  if(this->method_has_request_body()) {
+    this->read_request_body(fin);
+  }
+}
+
+void HttpResponse::set_status(StatusCode code)
+{
+  switch(code) {
+    case Ok:
+      status_code = Ok;
+      status_msg = "OK";
+      break;
+    case NotFound:
+      status_code = NotFound;
+      status_msg = "Not Found";
+      break;
+    default:
+      fprintf_exit("HttpResponse::set_status: Unknown status found '%d'\n", code);
+  }
+}
+
+static void build_response_to_head(HttpResponse& res, const HttpRequest& req)
+{
+  UNUSED(req);
+  res.set_status(Ok);
+}
+
+static void response_not_found(HttpResponse& res)
+{
+  res.set_status(NotFound);
+}
+
+// TODO: set other header fields
+static void build_response_to_get(HttpResponse& res, const HttpRequest& req)
+{
+  FILE* fp;
+  std::string path;
+  struct stat st;
+
+  // set path
+  if(req.path.compare("/")) {
+    path = docroot + std::string("index.html");
+  } else {
+    path = docroot + req.path;
+  }
+
+  // determine whether file exists or not and open it
+  if(access(path.c_str(), F_OK) == -1) {
+    response_not_found(res);
+    return;
+  }
+  fp = fopen(path.c_str(), "rb");
+  if(fp == NULL) {
+    perror_exit("fopen in build_response_to_get");
+  }
+
+  // read file
+  fstat(fileno(fp), &st);
+  assert(res.body.empty());
+  res.body.resize(st.st_size);
+  fread(&res.body[0], 1, res.body.size(), fp);
+
+  fclose(fp);
+}
+
+static void build_response(HttpResponse& res, const HttpRequest& req)
+{
+  res.version = "HTTP/1.1";
+  if(req.method.compare("HEAD") == 0) {
+    build_response_to_head(res, req);
+  } else if(req.method.compare("GET") == 0) {
+    build_response_to_get(res, req);
+  } else {
+    fprintf_exit("Unknown method '%s'\n", req.method.c_str());
+  }
 }
 
 void http_service(FILE* fin, FILE* fout)
@@ -125,10 +230,7 @@ void http_service(FILE* fin, FILE* fout)
   req->print();
   HttpResponse* res = new HttpResponse();
 
-  // TODO: make a response
-  res->version = "HTTP/1.1";
-  res->status_code = 200;
-  res->status_msg = "OK";
+  build_response(*res, *req);
   res->print();
 
   res->send(fout);
