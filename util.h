@@ -4,8 +4,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "http.h" // Dictionary
-
 #define UNUSED(x) (void)(x)
 
 // Which is better, map or unordered_map?
