@@ -132,6 +132,11 @@ void HttpRequest::read_request_body(FILE* fin)
   fread(&body[0], 1, body.size(), fin);
 }
 
+bool HttpRequest::path_has_dot_dot() const
+{
+  return strstr(path.c_str(), "..") == NULL;
+}
+
 bool HttpRequest::method_has_request_body() const
 {
   return method.compare("HEAD") != 0;
@@ -185,6 +190,9 @@ static void build_response_to_get(HttpResponse& res, const HttpRequest& req)
   std::string path;
   struct stat st;
 
+  if(req.path_has_dot_dot()) {
+    fprintf_exit("request path contains '..'\n");
+  }
   // set path
   if(req.path.compare("/")) {
     path = docroot + std::string("index.html");

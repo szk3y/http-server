@@ -22,6 +22,7 @@ class HttpRequest {
     Dictionary field;
     void print() const;
     void read_request(FILE* fin);
+    bool path_has_dot_dot() const;
   private:
     void read_request_line(FILE* fin);
     void read_request_header_field(FILE* fin);
