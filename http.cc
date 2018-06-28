@@ -175,14 +175,13 @@ void HttpResponse::set_status(StatusCode code)
       status_code = InternalServerError;
       status_msg = "Internal Server Error";
       break;
+    case NotImplemented:
+      status_code = NotImplemented;
+      status_msg = "Not Implemented";
+      break;
     default:
       fprintf_exit("HttpResponse::set_status: Unknown status found '%d'\n", code);
   }
-}
-
-void HttpResponse::bad_request()
-{
-  this->set_status(BadRequest);
 }
 
 static void build_response_to_head(HttpResponse& res, const HttpRequest& req)
@@ -204,7 +203,7 @@ static void build_response_to_get(HttpResponse& res, const HttpRequest& req)
   struct stat st;
 
   if(req.path_has_dot_dot()) {
-    res.bad_request();
+    res.set_status(BadRequest);
     return;
   }
   // set path
