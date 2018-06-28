@@ -119,8 +119,13 @@ void HttpRequest::read_request_header_field(FILE* fin)
 
 void HttpRequest::read_request_body(FILE* fin)
 {
-  auto it = find_field(field, "Content-length");
-  int content_length = std::stoi(it->second);
+  auto it = field.find("Content-length");
+  int content_length;
+  if(it == field.end()) {
+    content_length = 0;
+  } else {
+    content_length = std::stoi(it->second);
+  }
   if(content_length < 0) {
     fprintf_exit("read_request_body: negative content length found\n");
   }
@@ -134,7 +139,7 @@ void HttpRequest::read_request_body(FILE* fin)
 
 bool HttpRequest::path_has_dot_dot() const
 {
-  return strstr(path.c_str(), "..") == NULL;
+  return strstr(path.c_str(), "..") != NULL;
 }
 
 bool HttpRequest::method_has_request_body() const
@@ -190,11 +195,6 @@ static void build_response_to_head(HttpResponse& res, const HttpRequest& req)
   res.set_status(Ok);
 }
 
-static void response_not_found(HttpResponse& res)
-{
-  res.set_status(NotFound);
-}
-
 // TODO: set other header fields
 static void build_response_to_get(HttpResponse& res, const HttpRequest& req)
 {
@@ -207,15 +207,16 @@ static void build_response_to_get(HttpResponse& res, const HttpRequest& req)
     return;
   }
   // set path
-  if(req.path.compare("/")) {
+  if(req.path.compare("/") == 0) {
     path = docroot + std::string("index.html");
   } else {
     path = docroot + req.path;
   }
 
+  // TODO: prevent opening directories
   // determine whether file exists or not and open it
   if(access(path.c_str(), F_OK) == -1) {
-    response_not_found(res);
+    res.set_status(NotFound);
     return;
   }
   fp = fopen(path.c_str(), "rb");
@@ -227,14 +228,18 @@ static void build_response_to_get(HttpResponse& res, const HttpRequest& req)
   fstat(fileno(fp), &st);
   assert(res.body.empty());
   res.body.resize(st.st_size);
+  res.length = st.st_size;
   fread(&res.body[0], 1, res.body.size(), fp);
 
   fclose(fp);
+  res.set_status(Ok);
+  res.field["Content-Length"] = std::to_string(res.length);
 }
 
 static void build_response(HttpResponse& res, const HttpRequest& req)
 {
   res.version = "HTTP/1.1";
+  res.field["Content-Type"] = "text/html";
   if(req.method.compare("HEAD") == 0) {
     build_response_to_head(res, req);
   } else if(req.method.compare("GET") == 0) {

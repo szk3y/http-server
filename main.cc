@@ -12,7 +12,7 @@
 
 // file pointer to output log
 FILE* flog = stdout;
-const char* docroot = "./www";
+const char* docroot = "./www/";
 
 typedef void (*sighandler_t)(int);
 

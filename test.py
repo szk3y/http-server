@@ -6,19 +6,19 @@ import sys
 
 target = './http-server'
 
-def main():
-    try:
-        req = requests.head('http://localhost:8080', timeout=1)
-        print(req.status_code)
-        print(req.reason)
-        print(req.headers)
-    except requests.exceptions.Timeout:
-        print('Timeout!')
+def main(_timeout=None):
+    req = requests.get('http://localhost:8080', timeout=_timeout)
+    print(req.status_code)
+    print(req.reason)
+    print(req.headers)
 
 if __name__ == '__main__':
     if 2 <= len(sys.argv) and sys.argv[1] == '--gdb':
         main()
     else:
         p = Popen([target])
-        main()
-        p.terminate()
+        try:
+            main(1)
+        except Exception:
+            p.terminate()
+            print('Exception!')
