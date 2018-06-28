@@ -163,6 +163,10 @@ void HttpResponse::set_status(StatusCode code)
       status_code = Ok;
       status_msg = "OK";
       break;
+    case BadRequest:
+      status_code = BadRequest;
+      status_msg = "Bad Request";
+      break;
     case NotFound:
       status_code = NotFound;
       status_msg = "Not Found";
@@ -170,6 +174,11 @@ void HttpResponse::set_status(StatusCode code)
     default:
       fprintf_exit("HttpResponse::set_status: Unknown status found '%d'\n", code);
   }
+}
+
+void HttpResponse::bad_request()
+{
+  this->set_status(BadRequest);
 }
 
 static void build_response_to_head(HttpResponse& res, const HttpRequest& req)
@@ -191,7 +200,8 @@ static void build_response_to_get(HttpResponse& res, const HttpRequest& req)
   struct stat st;
 
   if(req.path_has_dot_dot()) {
-    fprintf_exit("request path contains '..'\n");
+    res.bad_request();
+    return;
   }
   // set path
   if(req.path.compare("/")) {

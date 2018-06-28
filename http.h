@@ -8,6 +8,7 @@
 
 typedef enum {
   Ok = 200,
+  BadRequest = 400,
   NotFound = 404,
 } StatusCode;
 
@@ -43,6 +44,7 @@ class HttpResponse {
     void send(FILE* fout) const;
     void print() const;
     void set_status(StatusCode);
+    void bad_request();
 };
 
 void http_service(FILE* fin, FILE* fout);
