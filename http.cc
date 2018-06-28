@@ -171,6 +171,10 @@ void HttpResponse::set_status(StatusCode code)
       status_code = NotFound;
       status_msg = "Not Found";
       break;
+    case InternalServerError:
+      status_code = InternalServerError;
+      status_msg = "Internal Server Error";
+      break;
     default:
       fprintf_exit("HttpResponse::set_status: Unknown status found '%d'\n", code);
   }
