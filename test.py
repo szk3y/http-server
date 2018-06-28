@@ -11,6 +11,10 @@ def main(_timeout=None):
     print(req.status_code)
     print(req.reason)
     print(req.headers)
+    req = requests.get('http://localhost:8080/hello.html', timeout=_timeout)
+    print(req.status_code)
+    print(req.reason)
+    print(req.headers)
 
 if __name__ == '__main__':
     if 2 <= len(sys.argv) and sys.argv[1] == '--gdb':
@@ -19,6 +23,7 @@ if __name__ == '__main__':
         p = Popen([target])
         try:
             main(1)
+            p.terminate()
         except Exception:
             p.terminate()
             print('Exception!')
