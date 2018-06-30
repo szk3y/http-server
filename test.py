@@ -7,6 +7,15 @@ import sys
 target = './http-server'
 
 def main(_timeout=None):
+    req = requests.head('http://localhost:8080/hello.html', timeout=_timeout)
+    print(req.status_code)
+    print(req.reason)
+    print(req.headers)
+# expects 404 Not Found
+    req = requests.head('http://localhost:8080/bye.html', timeout=_timeout)
+    print(req.status_code)
+    print(req.reason)
+    print(req.headers)
     req = requests.get('http://localhost:8080', timeout=_timeout)
     print(req.status_code)
     print(req.reason)

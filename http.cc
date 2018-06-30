@@ -191,8 +191,36 @@ void HttpResponse::set_status(StatusCode code)
 
 static void build_response_to_head(HttpResponse& res, const HttpRequest& req)
 {
-  UNUSED(req);
+  FILE* fp;
+  std::string path;
+  struct stat st;
+
+  if(req.path_has_dot_dot()) {
+    res.set_status(BadRequest);
+    return;
+  }
+  // set path
+  if(req.path.compare("/") == 0) {
+    path = docroot + std::string("index.html");
+  } else {
+    path = docroot + req.path;
+  }
+
+  // check that the requested file exists
+  if(access(path.c_str(), F_OK) == -1) {
+    res.set_status(NotFound);
+    return;
+  }
+  fp = fopen(path.c_str(), "rb");
+  if(fp == NULL) {
+    perror_exit("fopen in build_response_to_head");
+  }
+
+  // set content-length
+  fstat(fileno(fp), &st);
+  res.length = st.st_size;
   res.set_status(Ok);
+  res.field["Content-Length"] = std::to_string(res.length);
 }
 
 // TODO: set other header fields
@@ -214,7 +242,7 @@ static void build_response_to_get(HttpResponse& res, const HttpRequest& req)
   }
 
   // TODO: prevent opening directories
-  // determine whether file exists or not and open it
+  // determine whether file exists or not
   if(access(path.c_str(), F_OK) == -1) {
     res.set_status(NotFound);
     return;
